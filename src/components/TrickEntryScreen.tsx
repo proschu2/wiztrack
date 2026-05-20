@@ -280,20 +280,24 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {game.players.map((player) => {
-                  const bid = round.bids.find((b) => b.playerId === player.id);
+                {(() => {
+                  // Get players in bidding order
                   const biddingOrder = getBiddingOrder(round.dealer, game.players.length);
-                  // Sequential entry: only current player can enter if index >= 0
-                  // If index is -1, all players can enter (viewing completed round)
-                  const isSequentialMode = currentPlayerIndex >= 0;
-                  const currentPlayerId = isSequentialMode && currentPlayerIndex < biddingOrder.length
-                    ? game.players[biddingOrder[currentPlayerIndex]]?.id 
-                    : null;
-                  const isCurrentPlayer = isSequentialMode && player.id === currentPlayerId;
-                  const isDisabled = isSequentialMode && !isCurrentPlayer;
-                  const showIndicator = !showResults && isSequentialMode && isCurrentPlayer;
+                  const orderedPlayers = biddingOrder.map(idx => game.players[idx]);
+                  
+                  return orderedPlayers.map((player) => {
+                    const bid = round.bids.find((b) => b.playerId === player.id);
+                    // Sequential entry: only current player can enter if index >= 0
+                    // If index is -1, all players can enter (viewing completed round)
+                    const isSequentialMode = currentPlayerIndex >= 0;
+                    const currentPlayerId = isSequentialMode && currentPlayerIndex < biddingOrder.length
+                      ? game.players[biddingOrder[currentPlayerIndex]]?.id 
+                      : null;
+                    const isCurrentPlayer = isSequentialMode && player.id === currentPlayerId;
+                    const isDisabled = isSequentialMode && !isCurrentPlayer;
+                    const showIndicator = !showResults && isSequentialMode && isCurrentPlayer;
 
-                  return (
+                    return (
                     <TableRow key={player.id}>
                       <TableCell className="font-medium">
                         <span className="mr-2">{player.emoji}</span>{player.name}
@@ -334,8 +338,9 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                         </Select>
                       </TableCell>
                     </TableRow>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </TableBody>
             </Table>
 
@@ -343,10 +348,14 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
             <div className="rounded-lg bg-muted p-4">
               <h3 className="text-sm font-medium mb-3">Round Scores</h3>
               <div className="grid gap-2 sm:grid-cols-2">
-                {game.players.map((player) => {
-                  const score = playerScores.get(player.id);
-                  const bid = round.bids.find((b) => b.playerId === player.id);
-                  const isExact =
+                {(() => {
+                  const biddingOrder = getBiddingOrder(round.dealer, game.players.length);
+                  const orderedPlayers = biddingOrder.map(idx => game.players[idx]);
+                  
+                  return orderedPlayers.map((player) => {
+                    const score = playerScores.get(player.id);
+                    const bid = round.bids.find((b) => b.playerId === player.id);
+                    const isExact =
                     score !== undefined &&
                     Math.abs(
                       (bid?.tricks ?? 0) - (tricks[player.id] || 0)
@@ -392,7 +401,8 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                       </div>
                     </div>
                   );
-                })}
+                });
+                })()}
               </div>
             </div>
 
