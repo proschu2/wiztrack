@@ -63,7 +63,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
           existingTricks[p.id] = round.tricksWon?.[p.id];
         });
         setTricks(existingTricks);
-        setCurrentPlayerIndex(loadedGame.players.length); // Disable sequential entry for completed rounds
+        setCurrentPlayerIndex(-1); // Disable sequential entry (use -1 as sentinel)
       } else {
         // Fresh round (bidding or tricks phase not yet completed)
         setTricks({});
@@ -283,16 +283,21 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                 {game.players.map((player) => {
                   const bid = round.bids.find((b) => b.playerId === player.id);
                   const biddingOrder = getBiddingOrder(round.dealer, game.players.length);
-                  const currentPlayerId = biddingOrder[currentPlayerIndex] !== undefined 
+                  // Sequential entry: only current player can enter if index >= 0
+                  // If index is -1, all players can enter (viewing completed round)
+                  const isSequentialMode = currentPlayerIndex >= 0;
+                  const currentPlayerId = isSequentialMode && currentPlayerIndex < biddingOrder.length
                     ? game.players[biddingOrder[currentPlayerIndex]]?.id 
                     : null;
-                  const isCurrentPlayer = player.id === currentPlayerId && !showResults;
+                  const isCurrentPlayer = isSequentialMode && player.id === currentPlayerId;
+                  const isDisabled = isSequentialMode && !isCurrentPlayer;
+                  const showIndicator = !showResults && isSequentialMode && isCurrentPlayer;
 
                   return (
                     <TableRow key={player.id}>
                       <TableCell className="font-medium">
                         <span className="mr-2">{player.emoji}</span>{player.name}
-                        {isCurrentPlayer && (
+                        {showIndicator && (
                           <span className="ml-2 text-xs text-primary">(entering...)</span>
                         )}
                       </TableCell>
@@ -308,7 +313,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                               ? String(tricks[player.id])
                               : ""
                           }
-                          disabled={!isCurrentPlayer}
+                          disabled={isDisabled}
                           onValueChange={(val) =>
                             handleTrickChange(player.id, parseInt(val || "0", 10))
                           }
