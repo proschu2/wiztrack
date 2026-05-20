@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { loadGame, clearGame } from "@/lib/storage";
 
-interface MenuModalProps {
-  onNewGame?: () => void;
-  onRestart?: () => void;
-  onSettings?: () => void;
-}
-
-export function MenuModal({ onNewGame, onRestart, onSettings }: MenuModalProps) {
+export function MenuModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showRestartConfirmDialog, setShowRestartConfirmDialog] = useState(false);
@@ -85,10 +79,6 @@ export function MenuModal({ onNewGame, onRestart, onSettings }: MenuModalProps) 
       onClick: () => {
         setShowRestartConfirmDialog(true);
       },
-    },
-    {
-      label: "Settings",
-      onClick: () => handleMenuItemClick(onSettings ?? (() => {})),
     },
   ];
 

@@ -74,7 +74,7 @@ export default function GameCompleteScreen() {
     let tieCount = 0;
     let prevScore: number | null = null;
 
-    entries.forEach((entry, index) => {
+    entries.forEach((entry) => {
       if (prevScore === null || entry.totalScore === prevScore) {
         tieCount++;
         prevScore = entry.totalScore;

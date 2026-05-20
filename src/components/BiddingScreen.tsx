@@ -61,6 +61,15 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
       });
       setBids(existingBids);
       setBidsLocked(round.bidsLocked);
+
+      // Set current bidder to the next person who hasn't bid
+      if (!round.bidsLocked) {
+        const biddingOrder = getBiddingOrder(round.dealer, loadedGame.players.length);
+        const nextBidderIdx = biddingOrder.findIndex(
+          (idx) => !existingBids[loadedGame.players[idx].id]
+        );
+        setCurrentBidderIndex(nextBidderIdx >= 0 ? nextBidderIdx : 0);
+      }
     } else {
       // Create new round
       const newRound: Round = {
@@ -131,6 +140,16 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
 
   const handleBidChange = (playerId: string, value: number) => {
     setBids((prev) => ({ ...prev, [playerId]: value }));
+
+    // Advance to next bidder (unless it's the dealer/last player)
+    if (game && playersInBiddingOrder.length > 0) {
+      const currentPlayer = playersInBiddingOrder[currentBidderIndex];
+      const isLastPlayer = currentBidderIndex === playersInBiddingOrder.length - 1;
+      
+      if (!isLastPlayer && currentPlayer?.id === playerId) {
+        setCurrentBidderIndex((prev) => prev + 1);
+      }
+    }
   };
 
   const handleLockBids = () => {

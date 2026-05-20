@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadGame } from "@/lib/storage";
 import { cn } from "@/lib/utils";
-import type { Game } from "@/types/game";
 import MenuModal from "@/components/MenuModal";
 
 import StandingsTab from "@/components/standings/StandingsTab";

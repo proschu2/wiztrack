@@ -3,7 +3,6 @@
 import { Component, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useRouter } from "next/navigation";
 
 interface Props {
   children: ReactNode;
