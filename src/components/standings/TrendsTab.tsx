@@ -121,6 +121,14 @@ export default function TrendsTab({ game }: TrendsTabProps) {
     });
   };
 
+  // Add jitter to prevent overlapping lines (small offset based on player index)
+  const JITTER_AMOUNT = 15; // pixels
+  const jitterScale = (index: number) => {
+    // Small deterministic offset for each player to separate overlapping lines
+    const offset = ((index * 137) % 11) - 5; // range -5 to 5
+    return (offset * JITTER_AMOUNT) / 100; // normalize to ~±0.75 pixels
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Score Trends</h3>
@@ -202,12 +210,17 @@ export default function TrendsTab({ game }: TrendsTabProps) {
           </text>
 
           {/* Lines for each player */}
-          {trendData.map((playerData) => {
+          {trendData.map((playerData, playerIdx) => {
             const points = playerData.points;
             if (points.length < 2) return null;
 
             const pathData = points
-              .map((pt, i) => `${i === 0 ? "M" : "L"} ${xScale(pt.round)} ${yScale(pt.cumulativeScore)}`)
+              .map((pt, i) => {
+                // Add small jitter to separate overlapping lines
+                const jitter = i === 0 ? 0 : jitterScale(playerIdx);
+                const y = yScale(pt.cumulativeScore) + jitter;
+                return `${i === 0 ? "M" : "L"} ${xScale(pt.round)} ${y}`;
+              })
               .join(" ");
 
             return (
@@ -224,23 +237,27 @@ export default function TrendsTab({ game }: TrendsTabProps) {
           })}
 
           {/* Data points */}
-          {trendData.map((playerData) =>
-            playerData.points.map((pt) => (
-              <circle
-                key={`${playerData.player.id}-${pt.round}`}
-                cx={xScale(pt.round)}
-                cy={yScale(pt.cumulativeScore)}
-                r={5}
-                fill={playerData.color}
-                stroke="white"
-                strokeWidth={2}
-                className="cursor-pointer transition-transform hover:scale-125"
-                onMouseEnter={(e) =>
-                  handlePointHover(playerData.player, pt.round, pt.cumulativeScore, e)
-                }
-                onMouseLeave={() => setTooltip(null)}
-              />
-            ))
+          {trendData.map((playerData, playerIdx) =>
+            playerData.points.map((pt, pointIdx) => {
+              // Add jitter to points too
+              const jitter = pointIdx === 0 ? 0 : jitterScale(playerIdx);
+              return (
+                <circle
+                  key={`${playerData.player.id}-${pt.round}`}
+                  cx={xScale(pt.round)}
+                  cy={yScale(pt.cumulativeScore) + jitter}
+                  r={5}
+                  fill={playerData.color}
+                  stroke="white"
+                  strokeWidth={2}
+                  className="cursor-pointer transition-transform hover:scale-125"
+                  onMouseEnter={(e) =>
+                    handlePointHover(playerData.player, pt.round, pt.cumulativeScore, e)
+                  }
+                  onMouseLeave={() => setTooltip(null)}
+                />
+              );
+            })
           )}
         </svg>
       </div>
