@@ -38,6 +38,7 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
   const [bids, setBids] = useState<Record<string, number>>({});
   const [currentBidderIndex, setCurrentBidderIndex] = useState(0);
   const [bidsLocked, setBidsLocked] = useState(false);
+  const [showLockConfirmation, setShowLockConfirmation] = useState(false);
 
   useEffect(() => {
     const loadedGame = loadGame();
@@ -155,6 +156,9 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
     saveGame(updatedGame);
     setGame(updatedGame);
     setBidsLocked(true);
+    setShowLockConfirmation(true);
+    // Hide confirmation after 2 seconds
+    setTimeout(() => setShowLockConfirmation(false), 2000);
   };
 
   const handleNextRound = () => {
@@ -335,6 +339,14 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
               </TableBody>
             </Table>
 
+            {/* Lock Confirmation */}
+            {showLockConfirmation && (
+              <div className="flex items-center justify-center gap-2 p-3 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-lg animate-pulse">
+                <Check className="h-4 w-4" />
+                <span className="text-sm font-medium">Bids Locked!</span>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex flex-col gap-3">
               {!bidsLocked ? (
@@ -353,6 +365,7 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
                   size="lg"
                   onClick={handleNextRound}
                 >
+                  <Check className="mr-2 h-4 w-4" />
                   Continue to Trick Entry
                 </Button>
               )}
