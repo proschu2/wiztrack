@@ -1,3 +1,4 @@
+ 
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -35,7 +36,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
   const [tricks, setTricks] = useState<Record<string, number>>({});
   const [showResults, setShowResults] = useState(false);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- Loading game state from localStorage requires setting state
+   
   useEffect(() => {
     const loadedGame = loadGame();
     if (!loadedGame) {
@@ -84,7 +85,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
 
   const isTricksValid = useMemo(() => {
     return sumOfTricks === (round?.totalTricks || 0);
-  }, [tricks, round?.totalTricks, sumOfTricks]);
+  }, [sumOfTricks, round?.totalTricks]);
 
   const handleTrickChange = (playerId: string, value: number) => {
     setTricks((prev) => ({ ...prev, [playerId]: value }));
@@ -237,7 +238,6 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
               <TableBody>
                 {game.players.map((player) => {
                   const bid = round.bids.find((b) => b.playerId === player.id);
-                  const score = playerScores.get(player.id);
 
                   return (
                     <TableRow key={player.id}>

@@ -42,6 +42,7 @@ export default function GameSetupPage() {
     }
   }, []);
 
+   
   useEffect(() => {
     setPlayerNames((prev) => {
       const newNames = [...prev];

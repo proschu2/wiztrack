@@ -28,6 +28,7 @@ export default function GameCompleteScreen() {
   const router = useRouter();
   const [game, setGame] = useState<Game | null>(null);
 
+   
   useEffect(() => {
     const loadedGame = loadGame();
     if (!loadedGame) {
