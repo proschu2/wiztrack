@@ -50,30 +50,22 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
     // Initialize tricks from round if available
     const round = loadedGame.rounds.find((r) => r.roundNumber === roundNumber);
     if (round) {
-      // Only initialize tricks from saved data if tricksWon exists
-      // If phase is 'tricks', tricksWon might be empty - start fresh
+      // Only initialize tricks from saved data if:
+      // 1. Round phase is 'scored' (already completed), AND
+      // 2. tricksWon has actual entries
+      const isAlreadyScored = round.phase === "scored";
       const hasExistingTricks = round.tricksWon && Object.keys(round.tricksWon).length > 0;
       
-      if (hasExistingTricks) {
+      if (isAlreadyScored && hasExistingTricks) {
+        // Restoring a completed round
         const existingTricks: Record<string, number> = {};
         loadedGame.players.forEach((p) => {
           existingTricks[p.id] = round.tricksWon?.[p.id];
         });
         setTricks(existingTricks);
-
-        // Set current player to next player who hasn't entered tricks
-        const biddingOrder = getBiddingOrder(round.dealer, loadedGame.players.length);
-        let nextIdx = biddingOrder.length - 1; // Default to last if all entered
-        for (let i = 0; i < biddingOrder.length; i++) {
-          const playerId = loadedGame.players[biddingOrder[i]].id;
-          if (existingTricks[playerId] === undefined) {
-            nextIdx = i;
-            break;
-          }
-        }
-        setCurrentPlayerIndex(nextIdx);
+        setCurrentPlayerIndex(loadedGame.players.length); // Disable sequential entry for completed rounds
       } else {
-        // Fresh round - start at first player
+        // Fresh round (bidding or tricks phase not yet completed)
         setTricks({});
         setCurrentPlayerIndex(0);
       }
@@ -283,10 +275,13 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {game.players.map((player, index) => {
+                {game.players.map((player) => {
                   const bid = round.bids.find((b) => b.playerId === player.id);
                   const biddingOrder = getBiddingOrder(round.dealer, game.players.length);
-                  const isCurrentPlayer = index === biddingOrder[currentPlayerIndex] && !showResults;
+                  const currentPlayerId = biddingOrder[currentPlayerIndex] !== undefined 
+                    ? game.players[biddingOrder[currentPlayerIndex]]?.id 
+                    : null;
+                  const isCurrentPlayer = player.id === currentPlayerId && !showResults;
 
                   return (
                     <TableRow key={player.id}>
