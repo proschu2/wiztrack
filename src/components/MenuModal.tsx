@@ -1,18 +1,49 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { loadGame, clearGame } from "@/lib/storage";
+
+const THEME_KEY = "wiztrack-theme";
+
+function getTheme(): "dark" | "light" {
+  if (typeof window === "undefined") return "light";
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
+
+function setTheme(theme: "dark" | "light") {
+  if (theme === "dark") {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+  localStorage.setItem(THEME_KEY, theme);
+}
+
+function toggleTheme() {
+  const current = getTheme();
+  setTheme(current === "dark" ? "light" : "dark");
+}
 
 export function MenuModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showRestartConfirmDialog, setShowRestartConfirmDialog] = useState(false);
   const [playerNamesForPrefill, setPlayerNamesForPrefill] = useState<string[]>([]);
+  const [theme, setThemeState] = useState<"dark" | "light">("light");
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    setThemeState(getTheme());
+  }, []);
+
+  const handleThemeToggle = useCallback(() => {
+    toggleTheme();
+    setThemeState(getTheme());
+  }, []);
 
   // Close modal on escape key
   useEffect(() => {
@@ -98,7 +129,23 @@ export function MenuModal() {
         aria-expanded={isOpen}
       >
         <span className="sr-only">Menu</span>
-        <span className="text-xl font-light tracking-wider">≡</span>
+        <span className="text-lg">⚔️</span>
+      </button>
+
+      {/* Theme Toggle Button */}
+      <button
+        onClick={handleThemeToggle}
+        className={cn(
+          "fixed top-4 left-[3.5rem] z-50 p-2 rounded-lg",
+          "text-xl leading-none w-10 h-10 flex items-center justify-center",
+          "bg-background/80 backdrop-blur-sm border border-border",
+          "hover:bg-muted transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        )}
+        aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        <span className="sr-only">{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+        <span className="text-lg">{theme === "dark" ? "☀️" : "🌙"}</span>
       </button>
 
       {/* Modal Overlay */}
