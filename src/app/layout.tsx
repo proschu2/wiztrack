@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cinzel, Almendra } from "next/font/google";
+import StandingsFooter from "@/components/StandingsFooter";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -78,6 +79,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         {children}
+        <StandingsFooter />
         <script
           dangerouslySetInnerHTML={{
             __html: `
