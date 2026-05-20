@@ -6,12 +6,14 @@ const cinzel = Cinzel({
   variable: "--font-heading",
   subsets: ["latin"],
   weight: ["400", "700"],
+  display: "swap",
 });
 
 const almendra = Almendra({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "700"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -22,13 +24,27 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://wiztrack.8011704.xyz"),
   title: "WizTrack - Wizard Card Game Tracker",
   description: "Track scores, bids, and tricks for Wizard card games with your friends. Multiple players supported with automatic scoring.",
-  keywords: ["wizard", "card game", "tracker", "scores", "bidding"],
+  keywords: ["wizard", "card game", "tracker", "scores", "bidding", "multiplayer"],
   authors: [{ name: "WizTrack" }],
+  creator: "WizTrack",
+  publisher: "WizTrack",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
-    title: "WizTrack",
-    description: "Wizard Card Game Tracker - Track your game scores",
+    title: "WizTrack - Wizard Card Game Tracker",
+    description: "Track scores for Wizard card games",
     url: "https://wiztrack.8011704.xyz",
     siteName: "WizTrack",
     locale: "en_US",
@@ -43,6 +59,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon.svg",
     apple: "/icon.svg",
+    shortcut: "/icon.svg",
   },
 };
 
@@ -53,7 +70,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${cinzel.variable} ${almendra.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded"
+        >
+          Skip to main content
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

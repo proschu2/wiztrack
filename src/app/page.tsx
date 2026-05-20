@@ -159,7 +159,7 @@ export default function GameSetupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8" id="main-content">
       <MenuModal />
       <div className="mx-auto max-w-2xl">
         <Card>
