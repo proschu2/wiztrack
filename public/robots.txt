@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://wiztrack.8011704.xyz/sitemap.xml
