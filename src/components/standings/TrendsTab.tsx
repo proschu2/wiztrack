@@ -1,30 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import type { Game, Player } from "@/types/game";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import type { Game } from "@/types/game";
 import { calculateRoundScore } from "@/lib/scoring";
 
 interface TrendsTabProps {
   game: Game | null;
-}
-
-interface DataPoint {
-  round: number;
-  cumulativeScore: number;
-}
-
-interface PlayerTrendData {
-  player: Player;
-  color: string;
-  points: DataPoint[];
-}
-
-interface TooltipData {
-  player: Player;
-  round: number;
-  score: number;
-  x: number;
-  y: number;
 }
 
 // Predefined color palette for players
@@ -39,18 +30,8 @@ const PLAYER_COLORS = [
   "#eab308", // yellow
 ];
 
-/**
- * TrendsTab - Shows SVG line chart with score evolution per round
- *
- * Features:
- * - X-axis: Round numbers (0 = start, then 1, 2, 3...)
- * - Y-axis: Cumulative scores
- * - One colored line per player with dots at data points
- * - Tooltip on hover showing player name, round, and score
- * - Responsive SVG that scales with container
- */
 export default function TrendsTab({ game }: TrendsTabProps) {
-  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+  const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
 
   if (!game) {
     return (
@@ -61,10 +42,6 @@ export default function TrendsTab({ game }: TrendsTabProps) {
     );
   }
 
-  // Calculate trend data for all players
-  const trendData = calculateTrendData(game);
-
-  // If no scored rounds yet, show placeholder
   const scoredRounds = game.rounds.filter((r) => r.phase === "scored");
   if (scoredRounds.length === 0) {
     return (
@@ -77,246 +54,102 @@ export default function TrendsTab({ game }: TrendsTabProps) {
     );
   }
 
-  // Chart dimensions
-  const width = 600;
-  const height = 300;
-  const padding = { top: 20, right: 20, bottom: 40, left: 50 };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
-
-  // Calculate data ranges
-  const maxRound = scoredRounds.length;
-  const allScores = trendData.flatMap((p) => p.points.map((pt) => pt.cumulativeScore));
-  const minScore = Math.min(0, ...allScores);
-  const maxScore = Math.max(0, ...allScores);
-  const scoreRange = maxScore - minScore || 1; // Avoid division by zero
-
-  // Scale functions
-  const xScale = (round: number) => (round / maxRound) * chartWidth + padding.left;
-  const yScale = (score: number) =>
-    chartHeight - ((score - minScore) / scoreRange) * chartHeight + padding.top;
-
-  // Generate axis labels
-  const xLabels = Array.from({ length: maxRound + 1 }, (_, i) => i);
-  const yLabelCount = 5;
-  const yLabels = Array.from({ length: yLabelCount }, (_, i) => {
-    const value = minScore + (scoreRange * i) / (yLabelCount - 1);
-    return Math.round(value);
-  });
-
-  // Handle mouse events for tooltip
-  const handlePointHover = (
-    player: Player,
-    round: number,
-    score: number,
-    event: React.MouseEvent<SVGCircleElement>
-  ) => {
-    const rect = (event.target as SVGCircleElement).getBoundingClientRect();
-    setTooltip({
-      player,
-      round,
-      score,
-      x: rect.left + rect.width / 2,
-      y: rect.top,
-    });
-  };
-
-  // Add jitter to prevent overlapping lines (small offset based on player index)
-  const JITTER_AMOUNT = 15; // pixels
-  const jitterScale = (index: number) => {
-    // Small deterministic offset for each player to separate overlapping lines
-    const offset = ((index * 137) % 11) - 5; // range -5 to 5
-    return (offset * JITTER_AMOUNT) / 100; // normalize to ~±0.75 pixels
-  };
+  // Prepare data for Recharts
+  const chartData = prepareChartData(game);
 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Score Trends</h3>
 
-      {/* SVG Chart */}
-      <div className="w-full overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="w-full min-w-[300px]"
-          style={{ aspectRatio: `${width}/${height}` }}
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart
+          data={chartData}
+          margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
         >
-          {/* Background */}
-          <rect
-            x={padding.left}
-            y={padding.top}
-            width={chartWidth}
-            height={chartHeight}
-            className="fill-muted/50"
+          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+          <XAxis
+            dataKey="round"
+            tick={{ fontSize: 12 }}
+            tickLine={{ stroke: "currentColor" }}
           />
-
-          {/* Grid lines */}
-          {yLabels.map((label) => (
-            <line
-              key={`grid-${label}`}
-              x1={padding.left}
-              y1={yScale(label)}
-              x2={width - padding.right}
-              y2={yScale(label)}
-              className="stroke-muted stroke-1"
+          <YAxis
+            tick={{ fontSize: 12 }}
+            tickLine={{ stroke: "currentColor" }}
+            label={{
+              value: "Score",
+              angle: -90,
+              position: "insideLeft",
+              style: { fontSize: 12 },
+            }}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: "0.5rem",
+            }}
+          />
+          <Legend />
+          {game.players.map((player, index) => (
+            <Line
+              key={player.id}
+              type="monotone"
+              dataKey={player.name}
+              stroke={PLAYER_COLORS[index % PLAYER_COLORS.length]}
+              strokeWidth={2.5}
+              dot={{ r: 5, strokeWidth: 2 }}
+              activeDot={{ r: 7, strokeWidth: 2 }}
+              connectNulls
+              onMouseEnter={() => setHoveredPlayer(player.id)}
+              onMouseLeave={() => setHoveredPlayer(null)}
+              style={{
+                opacity: hoveredPlayer && hoveredPlayer !== player.id ? 0.3 : 1,
+                transition: "opacity 0.2s",
+              }}
             />
           ))}
-
-          {/* Y-axis labels */}
-          {yLabels.map((label) => (
-            <text
-              key={`y-label-${label}`}
-              x={padding.left - 8}
-              y={yScale(label)}
-              className="fill-muted-foreground text-xs"
-              textAnchor="end"
-              dominantBaseline="middle"
-            >
-              {label}
-            </text>
-          ))}
-
-          {/* X-axis labels */}
-          {xLabels.map((round) => (
-            <text
-              key={`x-label-${round}`}
-              x={xScale(round)}
-              y={height - padding.bottom + 20}
-              className="fill-muted-foreground text-xs"
-              textAnchor="middle"
-            >
-              {round}
-            </text>
-          ))}
-
-          {/* X-axis label */}
-          <text
-            x={width / 2}
-            y={height - 5}
-            className="fill-muted-foreground text-sm"
-            textAnchor="middle"
-          >
-            Round
-          </text>
-
-          {/* Y-axis label */}
-          <text
-            x={12}
-            y={height / 2}
-            className="fill-muted-foreground text-sm"
-            textAnchor="middle"
-            transform={`rotate(-90, 12, ${height / 2})`}
-          >
-            Score
-          </text>
-
-          {/* Lines for each player */}
-          {trendData.map((playerData, playerIdx) => {
-            const points = playerData.points;
-            if (points.length < 2) return null;
-
-            const pathData = points
-              .map((pt, i) => {
-                // Add small jitter to separate overlapping lines
-                const jitter = i === 0 ? 0 : jitterScale(playerIdx);
-                const y = yScale(pt.cumulativeScore) + jitter;
-                return `${i === 0 ? "M" : "L"} ${xScale(pt.round)} ${y}`;
-              })
-              .join(" ");
-
-            return (
-              <path
-                key={playerData.player.id}
-                d={pathData}
-                fill="none"
-                stroke={playerData.color}
-                strokeWidth={2.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            );
-          })}
-
-          {/* Data points */}
-          {trendData.map((playerData, playerIdx) =>
-            playerData.points.map((pt, pointIdx) => {
-              // Add jitter to points too
-              const jitter = pointIdx === 0 ? 0 : jitterScale(playerIdx);
-              return (
-                <circle
-                  key={`${playerData.player.id}-${pt.round}`}
-                  cx={xScale(pt.round)}
-                  cy={yScale(pt.cumulativeScore) + jitter}
-                  r={5}
-                  fill={playerData.color}
-                  stroke="white"
-                  strokeWidth={2}
-                  className="cursor-pointer transition-transform hover:scale-125"
-                  onMouseEnter={(e) =>
-                    handlePointHover(playerData.player, pt.round, pt.cumulativeScore, e)
-                  }
-                  onMouseLeave={() => setTooltip(null)}
-                />
-              );
-            })
-          )}
-        </svg>
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 justify-center">
-        {trendData.map((playerData) => (
-          <div key={playerData.player.id} className="flex items-center gap-2">
-            <div
-              className="w-4 h-4 rounded-full"
-              style={{ backgroundColor: playerData.color }}
-            />
-            <span className="text-sm">{playerData.player.name}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Tooltip */}
-      {tooltip && (
-        <div
-          className="fixed z-50 px-2 py-1 text-xs bg-popover border border-border rounded shadow-md pointer-events-none"
-          style={{ left: tooltip.x, top: tooltip.y - 30 }}
-        >
-          <span className="font-medium">{tooltip.player.name}</span>
-          <br />
-          Round {tooltip.round}: {tooltip.score} pts
-        </div>
-      )}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }
 
-/**
- * Calculate cumulative score trends for each player
- */
-function calculateTrendData(game: Game): PlayerTrendData[] {
+function prepareChartData(game: Game): { round: number; [key: string]: number | string }[] {
   const scoredRounds = game.rounds.filter((r) => r.phase === "scored");
+  const data: { round: number; [key: string]: number | string }[] = [
+    { round: 0 },
+  ];
 
-  return game.players.map((player, index) => {
-    const points: DataPoint[] = [{ round: 0, cumulativeScore: 0 }];
-    let cumulative = 0;
+  // Initialize scores for round 0
+  game.players.forEach((player) => {
+    data[0][player.name] = 0;
+  });
 
-    for (const round of scoredRounds) {
+  // Calculate cumulative scores per round
+  scoredRounds.forEach((round) => {
+    const roundData: { round: number; [key: string]: number | string } = {
+      round: round.roundNumber,
+    };
+
+    game.players.forEach((player) => {
+      // Get previous cumulative score
+      const prevData = data[data.length - 1];
+      const prevScore = (prevData[player.name] as number) || 0;
+
+      // Calculate this round's score
       const bid = round.bids.find((b) => b.playerId === player.id);
+      let roundScore = 0;
       if (bid) {
         const tricksWon = round.tricksWon?.[bid.playerId] || 0;
         const scoreResult = calculateRoundScore(bid.tricks, tricksWon);
-        cumulative += scoreResult.points;
+        roundScore = scoreResult.points;
       }
-      points.push({
-        round: round.roundNumber,
-        cumulativeScore: cumulative,
-      });
-    }
 
-    return {
-      player,
-      color: PLAYER_COLORS[index % PLAYER_COLORS.length],
-      points,
-    };
+      roundData[player.name] = prevScore + roundScore;
+    });
+
+    data.push(roundData);
   });
+
+  return data;
 }
