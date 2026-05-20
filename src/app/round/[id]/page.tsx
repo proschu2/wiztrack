@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BiddingScreen from "@/components/BiddingScreen";
 import { loadGame } from "@/lib/storage";
-import { validateCurrentPage } from "@/lib/gameState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Gamepad2, ArrowRight } from "lucide-react";
@@ -16,7 +15,6 @@ interface RoundPageProps {
 
 export default function RoundPage({ params }: RoundPageProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const [roundNumber, setRoundNumber] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,26 +27,10 @@ export default function RoundPage({ params }: RoundPageProps) {
         return;
       }
       setRoundNumber(num);
-
-      // Validate against current game state
-      const game = loadGame();
-      if (game && game.currentState) {
-        const validation = validateCurrentPage(pathname, game.currentState);
-        if (!validation.valid && validation.redirect) {
-          // If we're on the wrong page (e.g., /round/1 but state is tricks), show message
-          if (game.currentState.phase === 'tricks') {
-            // Don't redirect immediately - show options
-          } else if (game.currentState.phase === 'complete') {
-            router.push("/complete");
-            return;
-          }
-        }
-      }
-
       setLoading(false);
     };
     resolveParams();
-  }, [params, router, pathname]);
+  }, [params, router]);
 
   if (loading) {
     return (
