@@ -237,7 +237,6 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                 {game.players.map((player) => {
                   const bid = round.bids.find((b) => b.playerId === player.id);
                   const score = playerScores.get(player.id);
-                  const isCorrect = score !== undefined && score > 0;
 
                   return (
                     <TableRow key={player.id}>
