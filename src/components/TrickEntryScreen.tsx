@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowRight, Check, X } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import MenuModal from "@/components/MenuModal";
 import { loadGame, saveGame } from "@/lib/storage";
 import { calculateRoundScore } from "@/lib/scoring";
 import { getBiddingOrder } from "@/lib/dealerRotation";
@@ -219,6 +220,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      <MenuModal />
       <div className="mx-auto max-w-2xl">
         <Card>
           <CardHeader className="text-center">
