@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadGame } from "@/lib/storage";
+import { getResumeDestination } from "@/lib/gameState";
 import { cn } from "@/lib/utils";
 import MenuModal from "@/components/MenuModal";
 
@@ -21,27 +22,10 @@ export default function StandingsPage() {
   const game = loadGame();
 
   const getResumeGameDestination = (): string => {
-    if (!game || game.rounds.length === 0) {
+    if (!game) {
       return "/round/1";
     }
-
-    const lastRound = game.rounds[game.rounds.length - 1];
-    const currentRound = lastRound.roundNumber;
-
-    switch (lastRound.phase) {
-      case "bidding":
-        return `/round/${currentRound}`;
-      case "tricks":
-        return `/trick/${currentRound}`;
-      case "scored":
-        if (currentRound < game.settings.totalRounds) {
-          return `/round/${currentRound + 1}`;
-        } else {
-          return "/complete";
-        }
-      default:
-        return "/round/1";
-    }
+    return getResumeDestination(game);
   };
 
   const handleResumeGame = () => {

@@ -178,11 +178,16 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
       phase: "scored",
     };
 
+    const nextState = roundNumber >= game.settings.totalRounds
+      ? { phase: 'complete' as const }
+      : { phase: 'bidding' as const, round: roundNumber + 1 };
+
     const updatedGame: Game = {
       ...game,
       rounds: game.rounds.map((r) =>
         r.roundNumber === roundNumber ? updatedRound : r
       ),
+      currentState: nextState,
     };
 
     saveGame(updatedGame);

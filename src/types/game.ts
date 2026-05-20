@@ -66,6 +66,15 @@ export interface GameSettings {
 }
 
 /**
+ * Game phase states - single source of truth for navigation
+ */
+export type GamePhase = 
+  | { phase: 'idle' }
+  | { phase: 'bidding'; round: number }
+  | { phase: 'tricks'; round: number }
+  | { phase: 'complete' };
+
+/**
  * Represents the overall game state
  * @interface Game
  */
@@ -82,4 +91,6 @@ export interface Game {
   rounds: Round[];
   /** Current status of the game */
   status: 'waiting' | 'in_progress' | 'completed';
+  /** Current game phase - single source of truth for navigation */
+  currentState: GamePhase;
 }

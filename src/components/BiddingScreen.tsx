@@ -172,6 +172,7 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
       rounds: game.rounds.map((r: Round) =>
         r.roundNumber === roundNumber ? updatedRound : r
       ),
+      currentState: { phase: "tricks", round: roundNumber },
     };
 
     saveGame(updatedGame);

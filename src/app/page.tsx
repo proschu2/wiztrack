@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Minus, Play, RotateCcw, Gamepad2 } from "lucide-react";
 import { calculateRounds } from "@/lib/roundCalc";
 import { saveGame, loadGame } from "@/lib/storage";
+import { getResumeDestination } from "@/lib/gameState";
 import { getRandomInitialDealer } from "@/lib/dealerRotation";
 import MenuModal from "@/components/MenuModal";
 import type { Game, Player } from "@/types";
@@ -110,29 +111,7 @@ export default function GameSetupPage() {
 
   const handleResumeGame = () => {
     if (!existingGame) return;
-    // Find the last round to determine where to resume
-    const lastRound = existingGame.rounds[existingGame.rounds.length - 1];
-    if (lastRound) {
-      switch (lastRound.phase) {
-        case "bidding":
-          router.push(`/round/${lastRound.roundNumber}`);
-          break;
-        case "tricks":
-          router.push(`/trick/${lastRound.roundNumber}`);
-          break;
-        case "scored":
-          if (lastRound.roundNumber < existingGame.settings.totalRounds) {
-            router.push(`/round/${lastRound.roundNumber + 1}`);
-          } else {
-            router.push("/complete");
-          }
-          break;
-        default:
-          router.push("/round/1");
-      }
-    } else {
-      router.push("/round/1");
-    }
+    router.push(getResumeDestination(existingGame));
   };
 
   const handleStartNewGame = () => {
@@ -172,6 +151,7 @@ export default function GameSetupPage() {
       },
       rounds: [],
       status: "in_progress",
+      currentState: { phase: "bidding", round: 1 },
     };
 
     saveGame(game);

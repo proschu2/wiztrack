@@ -137,6 +137,10 @@ function isValidGame(game: unknown): game is Game {
   if (typeof g.settings.playerCount !== 'number') return false;
   if (typeof g.settings.totalRounds !== 'number') return false;
 
+  // Check currentState (new in v2)
+  if (!g.currentState || typeof g.currentState !== 'object') return false;
+  if (!['idle', 'bidding', 'tricks', 'complete'].includes(g.currentState.phase)) return false;
+
   // Validate players array structure
   for (const player of g.players) {
     if (!player || typeof player !== 'object') return false;
