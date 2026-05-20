@@ -56,12 +56,28 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
       });
       setTricks(existingTricks);
 
-      // Set current player to next unbidded player
+      // Set current player to next unbidded player (find first with undefined)
       const biddingOrder = getBiddingOrder(round.dealer, loadedGame.players.length);
-      const nextPlayerIdx = biddingOrder.findIndex(
-        (idx) => existingTricks[loadedGame.players[idx].id] === undefined
-      );
-      setCurrentPlayerIndex(nextPlayerIdx >= 0 ? nextPlayerIdx : 0);
+      const existingTricks: Record<string, number> = {};
+      loadedGame.players.forEach((p) => {
+        existingTricks[p.id] = round.tricksWon?.[p.id] ?? 0;
+      });
+      setTricks(existingTricks);
+
+      // Find first player in bidding order who hasn't entered tricks
+      // (check if tricksWon[p.id] is undefined OR if tricks entry is empty)
+      let nextIdx = 0;
+      for (let i = 0; i < biddingOrder.length; i++) {
+        const playerId = loadedGame.players[biddingOrder[i]].id;
+        if (existingTricks[playerId] === undefined || existingTricks[playerId] === null) {
+          nextIdx = i;
+          break;
+        }
+        if (i === biddingOrder.length - 1) {
+          nextIdx = i; // All entered, stay at last
+        }
+      }
+      setCurrentPlayerIndex(nextIdx);
     }
   }, [roundNumber, router]);
 
@@ -97,17 +113,30 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
   }, [sumOfTricks, round?.totalTricks]);
 
   const handleTrickChange = (playerId: string, value: number) => {
-    setTricks((prev) => ({ ...prev, [playerId]: value }));
+    setTricks((prev) => {
+      const updatedTricks = { ...prev, [playerId]: value };
 
-    // Advance to next player in bidding order
-    if (game && round) {
-      const biddingOrder = getBiddingOrder(round.dealer, game.players.length);
-      const currentPlayerId = game.players[biddingOrder[currentPlayerIndex]]?.id;
-      
-      if (currentPlayerId === playerId && currentPlayerIndex < biddingOrder.length - 1) {
-        setCurrentPlayerIndex((prev) => prev + 1);
+      // Advance to next player in bidding order who hasn't entered tricks yet
+      if (game && round) {
+        const biddingOrder = getBiddingOrder(round.dealer, game.players.length);
+        const currentPlayerId = game.players[biddingOrder[currentPlayerIndex]]?.id;
+
+        if (currentPlayerId === playerId) {
+          // Find next player who hasn't entered tricks
+          let nextIdx = currentPlayerIndex + 1;
+          while (nextIdx < biddingOrder.length) {
+            const nextPlayerId = game.players[biddingOrder[nextIdx]].id;
+            if (updatedTricks[nextPlayerId] === undefined) {
+              setCurrentPlayerIndex(nextIdx);
+              break;
+            }
+            nextIdx++;
+          }
+        }
       }
-    }
+
+      return updatedTricks;
+    });
   };
 
   const playerResults = useMemo(() => {
