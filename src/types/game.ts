@@ -12,6 +12,8 @@ export interface Player {
   id: string;
   /** Display name of the player */
   name: string;
+  /** Avatar emoji for the player */
+  emoji: string;
 }
 
 /**

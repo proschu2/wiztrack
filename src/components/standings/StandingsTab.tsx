@@ -84,7 +84,7 @@ export default function StandingsTab({ game }: StandingsTabProps) {
                   standing.isLeader ? "text-amber-500 font-bold" : ""
                 }`}
               >
-                {standing.player.name}
+                <span className="mr-2">{standing.player.emoji}</span>{standing.player.name}
               </span>
             </div>
 

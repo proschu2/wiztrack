@@ -305,7 +305,7 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
                   return (
                     <TableRow key={player.id}>
                       <TableCell className="font-medium">
-                        {player.name}
+                        <span className="mr-2">{player.emoji}</span>{player.name}
                         {isDealer && (
                           <span className="ml-2 text-xs" title="Dealer">
                             🎴

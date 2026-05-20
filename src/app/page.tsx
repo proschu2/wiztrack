@@ -17,8 +17,11 @@ const MAX_PLAYERS = 6;
 const DEFAULT_PLAYERS = 4;
 const PREFILL_STORAGE_KEY = "wiztrack_prefill_players";
 
-// Themed emojis for players
-const PLAYER_EMOJIS = ["🧙", "🧝", "🧚", "🧛", "🧜", "🐉"];
+// Fantasy/medieval/magic themed emojis
+const EMOJI_OPTIONS = [
+  "🧙", "🧝", "🧚", "🧛", "🧜", "🐉", "🧞", "🧟", "👑", "⚔️", "🛡️", "🔮",
+  "🗡️", "🏹", "🪄", "🌟", "🌙", "☀️", "🔥", "❄️", "⚡", "💎", "🏆", "👻",
+];
 
 export default function GameSetupPage() {
   const router = useRouter();
@@ -26,6 +29,10 @@ export default function GameSetupPage() {
   const [playerNames, setPlayerNames] = useState<string[]>(
     Array(DEFAULT_PLAYERS).fill("").map((_, i) => `Player ${i + 1}`)
   );
+  const [playerEmojis, setPlayerEmojis] = useState<string[]>(
+    EMOJI_OPTIONS.slice(0, DEFAULT_PLAYERS)
+  );
+  const [editingEmojiIndex, setEditingEmojiIndex] = useState<number | null>(null);
   const [errors, setErrors] = useState<string[]>(Array(DEFAULT_PLAYERS).fill(""));
 
   useEffect(() => {
@@ -45,7 +52,6 @@ export default function GameSetupPage() {
     }
   }, []);
 
-   
   useEffect(() => {
     setPlayerNames((prev) => {
       const newNames = [...prev];
@@ -53,6 +59,13 @@ export default function GameSetupPage() {
         newNames.push(`Player ${newNames.length + 1}`);
       }
       return newNames.slice(0, playerCount);
+    });
+    setPlayerEmojis((prev) => {
+      const newEmojis = [...prev];
+      while (newEmojis.length < playerCount) {
+        newEmojis.push(EMOJI_OPTIONS[newEmojis.length % EMOJI_OPTIONS.length]);
+      }
+      return newEmojis.slice(0, playerCount);
     });
     setErrors((prev) => {
       const newErrors = [...prev];
@@ -76,6 +89,15 @@ export default function GameSetupPage() {
         return newErrors;
       });
     }
+  };
+
+  const handleEmojiSelect = (index: number, emoji: string) => {
+    setPlayerEmojis((prev) => {
+      const newEmojis = [...prev];
+      newEmojis[index] = emoji;
+      return newEmojis;
+    });
+    setEditingEmojiIndex(null);
   };
 
   const addPlayer = () => {
@@ -103,6 +125,7 @@ export default function GameSetupPage() {
     const players: Player[] = playerNames.map((name, index) => ({
       id: `player-${index + 1}`,
       name: name.trim(),
+      emoji: playerEmojis[index],
     }));
 
     const initialDealer = getRandomInitialDealer(playerCount);
@@ -130,7 +153,7 @@ export default function GameSetupPage() {
       <div className="mx-auto max-w-2xl">
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">🎴 WizTrack</CardTitle>
+            <CardTitle className="text-2xl font-heading">🎴 WizTrack</CardTitle>
             <p className="text-muted-foreground mt-2">
               Set up your game with {MIN_PLAYERS}-{MAX_PLAYERS} players
             </p>
@@ -166,7 +189,16 @@ export default function GameSetupPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {playerNames.map((name, index) => (
                   <div key={index} className="space-y-1">
-                    <div className="relative">
+                    <div className="flex gap-2 items-center">
+                      {/* Emoji selector */}
+                      <button
+                        type="button"
+                        onClick={() => setEditingEmojiIndex(editingEmojiIndex === index ? null : index)}
+                        className="w-10 h-10 flex items-center justify-center text-2xl rounded-lg border bg-muted hover:bg-muted/80 transition-colors"
+                        aria-label={`Select emoji for Player ${index + 1}`}
+                      >
+                        {playerEmojis[index]}
+                      </button>
                       <Input
                         value={name}
                         onChange={(e) => handleNameChange(index, e.target.value)}
@@ -174,12 +206,26 @@ export default function GameSetupPage() {
                         className={errors[index] ? "border-destructive" : ""}
                         aria-label={`Player ${index + 1} name`}
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg pointer-events-none opacity-50">
-                        {PLAYER_EMOJIS[index]}
-                      </span>
                     </div>
                     {errors[index] && (
                       <p className="text-xs text-destructive">{errors[index]}</p>
+                    )}
+                    {/* Emoji picker popup */}
+                    {editingEmojiIndex === index && (
+                      <div className="absolute z-50 mt-1 p-2 bg-card border rounded-lg shadow-lg">
+                        <div className="grid grid-cols-6 gap-1 w-64">
+                          {EMOJI_OPTIONS.map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => handleEmojiSelect(index, emoji)}
+                              className="w-8 h-8 flex items-center justify-center text-xl hover:bg-muted rounded transition-colors"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))}

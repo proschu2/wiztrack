@@ -182,7 +182,7 @@ export default function GameCompleteScreen() {
                         </span>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {entry.player.name}
+                        {entry.player.emoji} {entry.player.name}
                         {entry.rank === 1 && (
                           <span className="ml-2">👑</span>
                         )}

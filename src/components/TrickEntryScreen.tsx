@@ -241,7 +241,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
 
                   return (
                     <TableRow key={player.id}>
-                      <TableCell className="font-medium">{player.name}</TableCell>
+                      <TableCell className="font-medium"><span className="mr-2">{player.emoji}</span>{player.name}</TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
                           bid:{bid?.tricks ?? 0}
@@ -303,7 +303,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                           : "bg-background"
                       }`}
                     >
-                      <span className="text-sm font-medium">{player.name}</span>
+                      <span className="text-sm font-medium"><span className="mr-1">{player.emoji}</span>{player.name}</span>
                       <div className="flex items-center gap-2">
                         {score !== undefined && (
                           <>
@@ -366,7 +366,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                         >
                           <div className="flex flex-col">
                             <span className="font-medium">
-                              {result.player.name}
+                              <span className="mr-2">{result.player.emoji}</span>{result.player.name}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               Bid: {result.bid} • Tricks: {result.tricksWon}
