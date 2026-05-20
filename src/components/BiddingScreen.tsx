@@ -289,8 +289,8 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-1/2">Player</TableHead>
-                  <TableHead className="w-1/2">Bid</TableHead>
+                  <TableHead className="w-2/3">Player</TableHead>
+                  <TableHead className="w-1/3">Bid</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
