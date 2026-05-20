@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowRight, Check, X } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { loadGame, saveGame } from "@/lib/storage";
 import { calculateRoundScore } from "@/lib/scoring";
 import type { Game, Round } from "@/types";
@@ -165,7 +166,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
   if (!game || !round) {
     return (
       <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

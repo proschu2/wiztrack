@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Lock, AlertCircle, Check } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { loadGame, saveGame } from "@/lib/storage";
 import { getFirstBidder, getBiddingOrder } from "@/lib/dealerRotation";
 import { getCardsPerPlayer } from "@/lib/roundCalc";
@@ -196,7 +197,7 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
   if (!game || !round) {
     return (
       <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
