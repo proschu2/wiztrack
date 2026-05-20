@@ -17,6 +17,9 @@ const MAX_PLAYERS = 6;
 const DEFAULT_PLAYERS = 4;
 const PREFILL_STORAGE_KEY = "wiztrack_prefill_players";
 
+// Themed emojis for players
+const PLAYER_EMOJIS = ["🧙", "🧝", "🧚", "🧛", "🧜", "🐉"];
+
 export default function GameSetupPage() {
   const router = useRouter();
   const [playerCount, setPlayerCount] = useState(DEFAULT_PLAYERS);
@@ -163,13 +166,18 @@ export default function GameSetupPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {playerNames.map((name, index) => (
                   <div key={index} className="space-y-1">
-                    <Input
-                      value={name}
-                      onChange={(e) => handleNameChange(index, e.target.value)}
-                      placeholder={`Player ${index + 1}`}
-                      className={errors[index] ? "border-destructive" : ""}
-                      aria-label={`Player ${index + 1} name`}
-                    />
+                    <div className="relative">
+                      <Input
+                        value={name}
+                        onChange={(e) => handleNameChange(index, e.target.value)}
+                        placeholder={`Player ${index + 1}`}
+                        className={errors[index] ? "border-destructive" : ""}
+                        aria-label={`Player ${index + 1} name`}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg pointer-events-none opacity-50">
+                        {PLAYER_EMOJIS[index]}
+                      </span>
+                    </div>
                     {errors[index] && (
                       <p className="text-xs text-destructive">{errors[index]}</p>
                     )}
