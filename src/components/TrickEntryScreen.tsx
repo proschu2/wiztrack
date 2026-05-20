@@ -50,34 +50,33 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
     // Initialize tricks from round if available
     const round = loadedGame.rounds.find((r) => r.roundNumber === roundNumber);
     if (round) {
-      const existingTricks: Record<string, number> = {};
-      loadedGame.players.forEach((p) => {
-        existingTricks[p.id] = round.tricksWon?.[p.id] ?? 0;
-      });
-      setTricks(existingTricks);
+      // Only initialize tricks from saved data if tricksWon exists
+      // If phase is 'tricks', tricksWon might be empty - start fresh
+      const hasExistingTricks = round.tricksWon && Object.keys(round.tricksWon).length > 0;
+      
+      if (hasExistingTricks) {
+        const existingTricks: Record<string, number> = {};
+        loadedGame.players.forEach((p) => {
+          existingTricks[p.id] = round.tricksWon?.[p.id];
+        });
+        setTricks(existingTricks);
 
-      // Set current player to next unbidded player (find first with undefined)
-      const biddingOrder = getBiddingOrder(round.dealer, loadedGame.players.length);
-      const existingTricks: Record<string, number> = {};
-      loadedGame.players.forEach((p) => {
-        existingTricks[p.id] = round.tricksWon?.[p.id] ?? 0;
-      });
-      setTricks(existingTricks);
-
-      // Find first player in bidding order who hasn't entered tricks
-      // (check if tricksWon[p.id] is undefined OR if tricks entry is empty)
-      let nextIdx = 0;
-      for (let i = 0; i < biddingOrder.length; i++) {
-        const playerId = loadedGame.players[biddingOrder[i]].id;
-        if (existingTricks[playerId] === undefined || existingTricks[playerId] === null) {
-          nextIdx = i;
-          break;
+        // Set current player to next player who hasn't entered tricks
+        const biddingOrder = getBiddingOrder(round.dealer, loadedGame.players.length);
+        let nextIdx = biddingOrder.length - 1; // Default to last if all entered
+        for (let i = 0; i < biddingOrder.length; i++) {
+          const playerId = loadedGame.players[biddingOrder[i]].id;
+          if (existingTricks[playerId] === undefined) {
+            nextIdx = i;
+            break;
+          }
         }
-        if (i === biddingOrder.length - 1) {
-          nextIdx = i; // All entered, stay at last
-        }
+        setCurrentPlayerIndex(nextIdx);
+      } else {
+        // Fresh round - start at first player
+        setTricks({});
+        setCurrentPlayerIndex(0);
       }
-      setCurrentPlayerIndex(nextIdx);
     }
   }, [roundNumber, router]);
 
