@@ -24,6 +24,7 @@ import { ArrowRight, Check, X } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { loadGame, saveGame } from "@/lib/storage";
 import { calculateRoundScore } from "@/lib/scoring";
+import { getBiddingOrder } from "@/lib/dealerRotation";
 import type { Game, Round } from "@/types";
 
 interface TrickEntryScreenProps {
@@ -34,6 +35,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
   const router = useRouter();
   const [game, setGame] = useState<Game | null>(null);
   const [tricks, setTricks] = useState<Record<string, number>>({});
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
 
    
@@ -53,6 +55,13 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
         existingTricks[p.id] = round.tricksWon?.[p.id] ?? 0;
       });
       setTricks(existingTricks);
+
+      // Set current player to next unbidded player
+      const biddingOrder = getBiddingOrder(round.dealer, loadedGame.players.length);
+      const nextPlayerIdx = biddingOrder.findIndex(
+        (idx) => existingTricks[loadedGame.players[idx].id] === undefined
+      );
+      setCurrentPlayerIndex(nextPlayerIdx >= 0 ? nextPlayerIdx : 0);
     }
   }, [roundNumber, router]);
 
@@ -89,6 +98,16 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
 
   const handleTrickChange = (playerId: string, value: number) => {
     setTricks((prev) => ({ ...prev, [playerId]: value }));
+
+    // Advance to next player in bidding order
+    if (game && round) {
+      const biddingOrder = getBiddingOrder(round.dealer, game.players.length);
+      const currentPlayerId = game.players[biddingOrder[currentPlayerIndex]]?.id;
+      
+      if (currentPlayerId === playerId && currentPlayerIndex < biddingOrder.length - 1) {
+        setCurrentPlayerIndex((prev) => prev + 1);
+      }
+    }
   };
 
   const playerResults = useMemo(() => {
@@ -236,12 +255,19 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {game.players.map((player) => {
+                {game.players.map((player, index) => {
                   const bid = round.bids.find((b) => b.playerId === player.id);
+                  const biddingOrder = getBiddingOrder(round.dealer, game.players.length);
+                  const isCurrentPlayer = index === biddingOrder[currentPlayerIndex] && !showResults;
 
                   return (
                     <TableRow key={player.id}>
-                      <TableCell className="font-medium"><span className="mr-2">{player.emoji}</span>{player.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <span className="mr-2">{player.emoji}</span>{player.name}
+                        {isCurrentPlayer && (
+                          <span className="ml-2 text-xs text-primary">(entering...)</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
                           bid:{bid?.tricks ?? 0}
@@ -254,6 +280,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                               ? String(tricks[player.id])
                               : ""
                           }
+                          disabled={!isCurrentPlayer}
                           onValueChange={(val) =>
                             handleTrickChange(player.id, parseInt(val || "0", 10))
                           }

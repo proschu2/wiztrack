@@ -332,7 +332,7 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
                             onValueChange={(val) =>
                               handleBidChange(player.id, parseInt(val || '0', 10))
                             }
-                            disabled={isCurrentBidder && currentBidder?.id !== player.id}
+                            disabled={!isCurrentBidder}
                           >
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select bid" />
