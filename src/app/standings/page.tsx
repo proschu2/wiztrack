@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { loadGame } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import type { Game } from "@/types/game";
+import MenuModal from "@/components/MenuModal";
 
 import StandingsTab from "@/components/standings/StandingsTab";
 import TrendsTab from "@/components/standings/TrendsTab";
@@ -18,13 +19,10 @@ export default function StandingsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("standings");
 
-  // Load game from localStorage
   const game = loadGame();
 
-  // Determine where to send the user when "Resume Game" is clicked
   const getResumeGameDestination = (): string => {
     if (!game || game.rounds.length === 0) {
-      // No rounds yet, go to round 1
       return "/round/1";
     }
 
@@ -33,17 +31,13 @@ export default function StandingsPage() {
 
     switch (lastRound.phase) {
       case "bidding":
-        // In bidding phase, go to current round
         return `/round/${currentRound}`;
       case "tricks":
-        // In tricks phase, go to trick entry for current round
         return `/trick/${currentRound}`;
       case "scored":
-        // Round is complete, check if more rounds remain
         if (currentRound < game.settings.totalRounds) {
           return `/round/${currentRound + 1}`;
         } else {
-          // All rounds complete, go to complete page
           return "/complete";
         }
       default:
@@ -63,15 +57,13 @@ export default function StandingsPage() {
 
   return (
     <div className="min-h-screen bg-background p-4">
+      <MenuModal />
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
         <div className="text-center pt-8">
           <h1 className="text-2xl font-bold">Standings</h1>
         </div>
 
-        {/* Tabs */}
         <div className="space-y-4">
-          {/* Tab List */}
           <div className="flex border-b">
             {tabs.map((tab) => (
               <button
@@ -90,7 +82,6 @@ export default function StandingsPage() {
             ))}
           </div>
 
-          {/* Tab Content */}
           <Card>
             <CardContent className="p-4">
               {activeTab === "standings" && <StandingsTab game={game} />}
@@ -100,7 +91,6 @@ export default function StandingsPage() {
           </Card>
         </div>
 
-        {/* Resume Game Button */}
         <Button onClick={handleResumeGame} className="w-full" size="lg">
           Resume Game
         </Button>

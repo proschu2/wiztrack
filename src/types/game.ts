@@ -59,6 +59,8 @@ export interface GameSettings {
   playerCount: number;
   /** Total number of rounds to play */
   totalRounds: number;
+  /** Random initial dealer index (shuffled at game start) */
+  initialDealer: number;
 }
 
 /**

@@ -6,8 +6,9 @@
 /**
  * Calculate the number of rounds based on player count.
  * 
- * In Wizard, each round corresponds to dealing cards - as the game progresses,
- * fewer cards are dealt each round until the deck is exhausted.
+ * Rule: Round X, each player gets X cards (n * X cards used).
+ * The deck replenishes between rounds.
+ * Max round = floor(60 / n) where n is player count.
  * 
  * @param playerCount - Number of players (3-6)
  * @returns Number of rounds for the game
@@ -27,42 +28,30 @@ export function calculateRounds(playerCount: number): number {
     throw new Error('Player count must be between 3 and 6');
   }
 
-  const roundsByPlayerCount: Record<number, number> = {
-    3: 20,
-    4: 15,
-    5: 12,
-    6: 10,
-  };
-
-  return roundsByPlayerCount[playerCount];
+  return Math.floor(60 / playerCount);
 }
 
 /**
  * Calculate how many cards each player receives in a given round.
- * Standard Wizard deck has 60 cards total.
+ * 
+ * Rule: Round X has X cards per player.
+ * Round 1 = 1 card, Round 2 = 2 cards, etc.
  * 
  * @param roundNumber - Current round number (1-indexed)
- * @param playerCount - Number of players
+ * @param playerCount - Number of players (unused, kept for API consistency)
  * @returns Number of cards to deal this round
  * 
  * @example
  * ```typescript
- * getCardsPerPlayer(1, 4);  // Returns 15 (round 1: 60/4 = 15)
- * getCardsPerPlayer(5, 4);  // Returns 12
- * getCardsPerPlayer(10, 4); // Returns 6
+ * getCardsPerPlayer(1, 4);  // Returns 1
+ * getCardsPerPlayer(5, 4);  // Returns 5
+ * getCardsPerPlayer(15, 4); // Returns 15
  * ```
  */
-export function getCardsPerPlayer(roundNumber: number, playerCount: number): number {
+export function getCardsPerPlayer(roundNumber: number, _playerCount: number): number {
   if (roundNumber < 1) {
     throw new Error('Round number must be at least 1');
   }
-  if (playerCount < 3 || playerCount > 6) {
-    throw new Error('Player count must be between 3 and 6');
-  }
 
-  // Cards decrease as rounds progress
-  // Formula: 60 cards / playerCount - decrement per round
-  const cardsPerPlayer = Math.floor(60 / playerCount) - Math.floor((roundNumber - 1) / playerCount);
-  
-  return Math.max(1, cardsPerPlayer);
+  return roundNumber;
 }

@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Minus, Play } from "lucide-react";
 import { calculateRounds } from "@/lib/roundCalc";
 import { saveGame } from "@/lib/storage";
+import { getRandomInitialDealer } from "@/lib/dealerRotation";
+import MenuModal from "@/components/MenuModal";
 import type { Game, Player } from "@/types";
 
 const MIN_PLAYERS = 3;
@@ -23,27 +25,23 @@ export default function GameSetupPage() {
   );
   const [errors, setErrors] = useState<string[]>(Array(DEFAULT_PLAYERS).fill(""));
 
-  // Load pre-fill player names from sessionStorage on mount
   useEffect(() => {
     try {
       const prefillJson = sessionStorage.getItem(PREFILL_STORAGE_KEY);
       if (prefillJson) {
         const prefillNames: string[] = JSON.parse(prefillJson);
         if (prefillNames && prefillNames.length > 0) {
-          // Clear the prefill storage after reading
           sessionStorage.removeItem(PREFILL_STORAGE_KEY);
-          // Set player count and names based on prefill
           const count = Math.min(Math.max(prefillNames.length, MIN_PLAYERS), MAX_PLAYERS);
           setPlayerCount(count);
           setPlayerNames(prefillNames.slice(0, count));
         }
       }
     } catch {
-      // Ignore prefill errors - use defaults
+      // Ignore prefill errors
     }
   }, []);
 
-  // Update player names array when count changes
   useEffect(() => {
     setPlayerNames((prev) => {
       const newNames = [...prev];
@@ -67,7 +65,6 @@ export default function GameSetupPage() {
       newNames[index] = value;
       return newNames;
     });
-    // Clear error when user types
     if (errors[index]) {
       setErrors((prev) => {
         const newErrors = [...prev];
@@ -99,11 +96,12 @@ export default function GameSetupPage() {
       return;
     }
 
-    // Create game
     const players: Player[] = playerNames.map((name, index) => ({
       id: `player-${index + 1}`,
       name: name.trim(),
     }));
+
+    const initialDealer = getRandomInitialDealer(playerCount);
 
     const game: Game = {
       id: `game-${Date.now()}`,
@@ -112,20 +110,19 @@ export default function GameSetupPage() {
       settings: {
         playerCount,
         totalRounds: calculateRounds(playerCount),
+        initialDealer,
       },
       rounds: [],
       status: "in_progress",
     };
 
-    // Save to localStorage
     saveGame(game);
-
-    // Navigate to first round
     router.push("/round/1");
   };
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      <MenuModal />
       <div className="mx-auto max-w-2xl">
         <Card>
           <CardHeader className="text-center">
@@ -135,7 +132,6 @@ export default function GameSetupPage() {
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Player Count Controls */}
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Number of Players</span>
               <div className="flex items-center gap-2">
@@ -161,7 +157,6 @@ export default function GameSetupPage() {
               </div>
             </div>
 
-            {/* Player Name Inputs */}
             <div className="space-y-3">
               <label className="text-sm font-medium">Player Names</label>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -182,7 +177,6 @@ export default function GameSetupPage() {
               </div>
             </div>
 
-            {/* Game Info */}
             <div className="rounded-lg bg-muted p-4 text-center">
               <p className="text-sm text-muted-foreground">
                 {calculateRounds(playerCount)} rounds •{" "}
@@ -190,7 +184,6 @@ export default function GameSetupPage() {
               </p>
             </div>
 
-            {/* Start Button */}
             <Button
               className="w-full"
               size="lg"

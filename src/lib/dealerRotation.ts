@@ -62,6 +62,20 @@ export function getFirstBidder(dealerIndex: number, playerCount: number): number
 }
 
 /**
+ * Get a random initial dealer index.
+ * Used at game start to randomly determine who deals first.
+ * 
+ * @param playerCount - Total number of players
+ * @returns Random index from 0 to playerCount - 1
+ */
+export function getRandomInitialDealer(playerCount: number): number {
+  if (playerCount < 3 || playerCount > 6) {
+    throw new Error('Player count must be between 3 and 6');
+  }
+  return Math.floor(Math.random() * playerCount);
+}
+
+/**
  * Get the complete bidding order for a round.
  * 
  * @param dealerIndex - Index of the dealer (0-indexed)

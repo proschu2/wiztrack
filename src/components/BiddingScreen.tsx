@@ -24,6 +24,7 @@ import { loadGame, saveGame } from "@/lib/storage";
 import { getFirstBidder, getBiddingOrder } from "@/lib/dealerRotation";
 import { getCardsPerPlayer } from "@/lib/roundCalc";
 import { calculateRoundScore } from "@/lib/scoring";
+import MenuModal from "@/components/MenuModal";
 import type { Game, Round, Bid, Player } from "@/types";
 
 interface BiddingScreenProps {
@@ -46,6 +47,7 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
     setGame(loadedGame);
 
     // Initialize or load round
+    const initialDealer = loadedGame.settings.initialDealer;
     const round = loadedGame.rounds.find((r: Round) => r.roundNumber === roundNumber);
     if (round) {
       // Load existing bids
@@ -65,9 +67,9 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
         bidsLocked: false,
         bids: [],
         tricksWon: {},
-        dealer: (roundNumber - 1) % loadedGame.players.length,
+        dealer: (initialDealer + roundNumber - 1) % loadedGame.players.length,
         firstBidder: getFirstBidder(
-          (roundNumber - 1) % loadedGame.players.length,
+          (initialDealer + roundNumber - 1) % loadedGame.players.length,
           loadedGame.players.length
         ),
       };
@@ -89,6 +91,13 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
     if (!round) return [];
     return getBiddingOrder(round.dealer, game?.players.length || 0);
   }, [round, game?.players.length]);
+
+  // Players sorted by bidding order (first bidder first, dealer last)
+  const playersInBiddingOrder = useMemo(() => {
+    if (!game || !round) return [];
+    const order = getBiddingOrder(round.dealer, game.players.length);
+    return order.map((idx) => game.players[idx]);
+  }, [game, round]);
 
   const currentBidder = useMemo(() => {
     if (!game || biddingOrder.length === 0) return null;
@@ -114,21 +123,7 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
     return game.players.every((p: Player) => bids[p.id] !== undefined);
   }, [game, bids]);
 
-  const lastPlayerValidOptions = useMemo(() => {
-    if (!round) return [];
-    const placedBidsSum = Object.values(bids).reduce((sum, b) => sum + b, 0);
-    const minNeeded = round.totalTricks - placedBidsSum;
-    const maxAllowed = round.totalTricks - placedBidsSum;
-
-    // Last player cannot bid exactly what's needed
-    const options: number[] = [];
-    for (let i = 0; i <= 5; i++) {
-      if (i < minNeeded || i > maxAllowed) {
-        options.push(i);
-      }
-    }
-    return options;
-  }, [round, bids]);
+  const maxBid = round?.roundNumber ?? 0; // Round X = max bid X
 
   const handleBidChange = (playerId: string, value: number) => {
     setBids((prev) => ({ ...prev, [playerId]: value }));
@@ -208,6 +203,7 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      <MenuModal />
       <div className="mx-auto max-w-2xl">
         <Card>
           <CardHeader className="text-center">
@@ -272,27 +268,26 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {game.players.map((player: Player, index: number) => {
-                  const isCurrentBidder = biddingOrder[currentBidderIndex] === index;
-                  const isLastPlayer = index === biddingOrder[biddingOrder.length - 1];
+                {playersInBiddingOrder.map((player, displayIndex) => {
+                  // Find original index in game.players
+                  const originalIndex = game.players.findIndex(p => p.id === player.id);
+                  const isCurrentBidder = displayIndex === currentBidderIndex && !bidsLocked;
+                  const isLastPlayer = displayIndex === playersInBiddingOrder.length - 1;
+                  const isDealer = originalIndex === round.dealer;
+                  const isFirstBidder = originalIndex === round.firstBidder;
 
                   return (
                     <TableRow key={player.id}>
                       <TableCell className="font-medium">
                         {player.name}
-                        {isCurrentBidder && !bidsLocked && (
-                          <span className="ml-2 text-xs text-primary">
-                            (bidding...)
-                          </span>
-                        )}
-                        {round.dealer === index && (
+                        {isDealer && (
                           <span className="ml-2 text-xs" title="Dealer">
                             🎴
                           </span>
                         )}
-                        {round.firstBidder === index && (
-                          <span className="ml-1 text-xs text-muted-foreground">
-                            →
+                        {isCurrentBidder && (
+                          <span className="ml-2 text-xs text-primary">
+                            (bidding...)
                           </span>
                         )}
                       </TableCell>
@@ -317,10 +312,14 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
                               <SelectValue placeholder="Select bid" />
                             </SelectTrigger>
                             <SelectContent>
-                              {(isLastPlayer
-                                ? lastPlayerValidOptions
-                                : Array.from({ length: 6 }, (_, i) => i)
-                              ).map((num) => (
+                              {Array.from({ length: maxBid + 1 }, (_, i) => i)
+                              .filter((num) => {
+                                // Last player cannot bid exactly what's needed for others
+                                if (!isLastPlayer) return true;
+                                const placedBidsSum = Object.values(bids).reduce((sum, b) => sum + b, 0);
+                                return num !== round.totalTricks - placedBidsSum;
+                              })
+                              .map((num) => (
                                 <SelectItem key={num} value={String(num)}>
                                   {num}
                                 </SelectItem>
