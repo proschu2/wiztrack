@@ -15,7 +15,6 @@ interface TrickPageProps {
 
 export default function TrickPage({ params }: TrickPageProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const [roundNumber, setRoundNumber] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
