@@ -35,6 +35,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
   const [tricks, setTricks] = useState<Record<string, number>>({});
   const [showResults, setShowResults] = useState(false);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Loading game state from localStorage requires setting state
   useEffect(() => {
     const loadedGame = loadGame();
     if (!loadedGame) {

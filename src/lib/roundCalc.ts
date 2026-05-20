@@ -38,17 +38,16 @@ export function calculateRounds(playerCount: number): number {
  * Round 1 = 1 card, Round 2 = 2 cards, etc.
  * 
  * @param roundNumber - Current round number (1-indexed)
- * @param playerCount - Number of players (unused, kept for API consistency)
  * @returns Number of cards to deal this round
  * 
  * @example
  * ```typescript
- * getCardsPerPlayer(1, 4);  // Returns 1
- * getCardsPerPlayer(5, 4);  // Returns 5
- * getCardsPerPlayer(15, 4); // Returns 15
+ * getCardsPerPlayer(1);  // Returns 1
+ * getCardsPerPlayer(5);  // Returns 5
+ * getCardsPerPlayer(15); // Returns 15
  * ```
  */
-export function getCardsPerPlayer(roundNumber: number, _playerCount: number): number {
+export function getCardsPerPlayer(roundNumber: number): number {
   if (roundNumber < 1) {
     throw new Error('Round number must be at least 1');
   }

@@ -40,6 +40,7 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
   const [bidsLocked, setBidsLocked] = useState(false);
   const [showLockConfirmation, setShowLockConfirmation] = useState(false);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Loading game state from localStorage requires setting state
   useEffect(() => {
     const loadedGame = loadGame();
     if (!loadedGame) {
@@ -63,8 +64,8 @@ export default function BiddingScreen({ roundNumber }: BiddingScreenProps) {
       // Create new round
       const newRound: Round = {
         roundNumber,
-        cardsDealt: getCardsPerPlayer(roundNumber, loadedGame.players.length),
-        totalTricks: getCardsPerPlayer(roundNumber, loadedGame.players.length),
+        cardsDealt: getCardsPerPlayer(roundNumber),
+        totalTricks: getCardsPerPlayer(roundNumber),
         phase: "bidding",
         bidsLocked: false,
         bids: [],
