@@ -12,6 +12,7 @@ interface PlayerStanding {
   playerEmoji: string;
   totalPoints: number;
   rank: number;
+  isLeader: boolean;
 }
 
 export default function StandingsFooter() {
