@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { loadGame } from "@/lib/storage";
 import { calculateRoundScore } from "@/lib/scoring";
@@ -15,35 +15,114 @@ interface PlayerStanding {
   isLeader: boolean;
 }
 
-export default function StandingsFooter() {
-  const [standings, setStandings] = useState<PlayerStanding[]>([]);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [hasGame, setHasGame] = useState(false);
+function calculateStandings(game: NonNullable<ReturnType<typeof loadGame>>): PlayerStanding[] {
+  const playerScores = new Map<string, number>();
+  game.players.forEach((p) => playerScores.set(p.id, 0));
+
+  game.rounds
+    .filter((r) => r.phase === "scored")
+    .forEach((round) => {
+      round.bids.forEach((bid) => {
+        const tricksWon = round.tricksWon?.[bid.playerId] || 0;
+        const score = calculateRoundScore(bid.tricks, tricksWon).points;
+        playerScores.set(
+          bid.playerId,
+          (playerScores.get(bid.playerId) || 0) + score
+        );
+      });
+    });
+
+  const standings: PlayerStanding[] = game.players.map((p) => ({
+    playerId: p.id,
+    playerName: p.name,
+    playerEmoji: p.emoji,
+    totalPoints: playerScores.get(p.id) || 0,
+    rank: 0,
+    isLeader: false,
+  }));
+
+  standings.sort((a, b) => b.totalPoints - a.totalPoints);
+
+  let currentRank = 1;
+  let prevScore: number | null = null;
+  standings.forEach((s, index) => {
+    if (prevScore !== null && s.totalPoints === prevScore) {
+      // Same rank
+    } else {
+      currentRank = index + 1;
+    }
+    s.rank = currentRank;
+    prevScore = s.totalPoints;
+  });
+
+  const topScore = standings[0]?.totalPoints || 0;
+  standings.forEach((s) => {
+    s.isLeader = s.totalPoints === topScore;
+  });
+
+  return standings;
+}
+
+// Sync manager to detect localStorage changes
+function useLocalStorageSync() {
+  const lastDataRef = useRef<string | null>(null);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    const game = loadGame();
-    if (game && game.status === "in_progress") {
-      setHasGame(true);
-      setStandings(calculateStandings(game));
-    } else {
-      setHasGame(false);
-    }
+    // Initial read
+    lastDataRef.current = localStorage.getItem('wiztrack_game');
+
+    const handleStorage = () => {
+      // Cross-tab sync
+      const newData = localStorage.getItem('wiztrack_game');
+      if (newData !== lastDataRef.current) {
+        lastDataRef.current = newData;
+        setTick(t => t + 1);
+      }
+    };
+
+    // Poll for same-tab changes (localStorage doesn't emit event for same tab)
+    const interval = setInterval(() => {
+      const newData = localStorage.getItem('wiztrack_game');
+      if (newData !== lastDataRef.current) {
+        lastDataRef.current = newData;
+        setTick(t => t + 1);
+      }
+    }, 500);
+
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
   }, []);
 
-  if (!hasGame || standings.length === 0) {
+  return tick;
+}
+
+export default function StandingsFooter() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const tick = useLocalStorageSync();
+
+  const game = loadGame();
+  
+  const hasScoredRounds = game?.rounds?.some((r) => r.phase === "scored") ?? false;
+  if (!game || game.status !== "in_progress" || !hasScoredRounds) {
     return null;
   }
+
+  const standings = calculateStandings(game);
 
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-40",
+        "fixed bottom-0 left-0 right-0 z-50",
         "bg-background/95 backdrop-blur-sm border-t border-border",
         "transition-all duration-300 ease-in-out",
         isCollapsed ? "h-12" : "h-auto"
       )}
     >
-      {/* Header - always visible */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="w-full px-4 py-2 flex items-center justify-between hover:bg-muted/50 transition-colors"
@@ -57,8 +136,7 @@ export default function StandingsFooter() {
         )}
       </button>
 
-      {/* Content - hidden when collapsed */}
-      {!isCollapsed && (
+      {!isCollapsed && standings.length > 0 && (
         <div className="px-4 pb-3 space-y-2">
           <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${standings.length}, 1fr)` }}>
             {standings.map((player) => (
@@ -86,59 +164,4 @@ export default function StandingsFooter() {
       )}
     </div>
   );
-}
-
-function calculateStandings(game: ReturnType<typeof loadGame>): PlayerStanding[] {
-  if (!game) return [];
-
-  // Calculate cumulative scores for each player
-  const playerScores = new Map<string, number>();
-  game.players.forEach((p) => playerScores.set(p.id, 0));
-
-  game.rounds
-    .filter((r) => r.phase === "scored")
-    .forEach((round) => {
-      round.bids.forEach((bid) => {
-        const tricksWon = round.tricksWon?.[bid.playerId] || 0;
-        const score = calculateRoundScore(bid.tricks, tricksWon).points;
-        playerScores.set(
-          bid.playerId,
-          (playerScores.get(bid.playerId) || 0) + score
-        );
-      });
-    });
-
-  // Create standings array
-  const standings: PlayerStanding[] = game.players.map((p) => ({
-    playerId: p.id,
-    playerName: p.name,
-    playerEmoji: p.emoji,
-    totalPoints: playerScores.get(p.id) || 0,
-    rank: 0,
-    isLeader: false,
-  }));
-
-  // Sort by score descending
-  standings.sort((a, b) => b.totalPoints - a.totalPoints);
-
-  // Assign ranks (handle ties)
-  let currentRank = 1;
-  let prevScore: number | null = null;
-  standings.forEach((s, index) => {
-    if (prevScore !== null && s.totalPoints === prevScore) {
-      // Same rank as previous
-    } else {
-      currentRank = index + 1;
-    }
-    s.rank = currentRank;
-    prevScore = s.totalPoints;
-  });
-
-  // Mark leader(s)
-  const topScore = standings[0]?.totalPoints || 0;
-  standings.forEach((s) => {
-    s.isLeader = s.totalPoints === topScore;
-  });
-
-  return standings;
 }

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowRight, Check, X } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { MagicSpinner } from "@/components/MagicSpinner";
 import MenuModal from "@/components/MenuModal";
 import { loadGame, saveGame } from "@/lib/storage";
 import { calculateRoundScore } from "@/lib/scoring";
@@ -38,6 +39,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
   const [tricks, setTricks] = useState<Record<string, number>>({});
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
    
   useEffect(() => {
@@ -191,9 +193,14 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
       currentState: nextState,
     };
 
+    // Show spinner, save, then hide spinner
+    setIsSaving(true);
     saveGame(updatedGame);
-    setGame(updatedGame);
-    setShowResults(true);
+    setTimeout(() => {
+      setGame(updatedGame);
+      setShowResults(true);
+      setIsSaving(false);
+    }, 300); // Brief delay to show spinner
   };
 
   const handleNextRound = () => {
@@ -219,7 +226,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8 pb-24">
       <MenuModal />
       <div className="mx-auto max-w-2xl">
         <Card>
@@ -410,16 +417,17 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
 
             {/* Actions */}
             {!showResults ? (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 relative">
                 <Button
                   className="w-full"
                   size="lg"
                   onClick={handleConfirmResults}
-                  disabled={!allTricksPlaced || !isTricksValid}
+                  disabled={!allTricksPlaced || !isTricksValid || isSaving}
                 >
                   <Check className="mr-2 h-4 w-4" />
-                  Confirm Results
+                  {isSaving ? "Saving..." : "Confirm Results"}
                 </Button>
+                <MagicSpinner isSpinning={isSaving} message="Saving results..." />
               </div>
             ) : (
               <div className="space-y-4">
@@ -474,6 +482,7 @@ export default function TrickEntryScreen({ roundNumber }: TrickEntryScreenProps)
                       ? handleEndGame
                       : handleNextRound
                   }
+                  disabled={isSaving}
                 >
                   <ArrowRight className="mr-2 h-4 w-4" />
                   {roundNumber >= game.settings.totalRounds

@@ -29,6 +29,7 @@ export function saveGame(game: Game): boolean {
   }
 
   try {
+    if (typeof window === 'undefined') return false; // SSR guard
     const serialized = JSON.stringify(game);
     localStorage.setItem(GAME_STORAGE_KEY, serialized);
     return true;
@@ -54,6 +55,8 @@ export function saveGame(game: Game): boolean {
  * ```
  */
 export function loadGame(): Game | null {
+  if (typeof window === 'undefined') return null; // SSR guard
+  
   try {
     const serialized = localStorage.getItem(GAME_STORAGE_KEY);
     
@@ -88,6 +91,8 @@ export function loadGame(): Game | null {
  * ```
  */
 export function clearGame(): boolean {
+  if (typeof window === 'undefined') return false; // SSR guard
+  
   try {
     localStorage.removeItem(GAME_STORAGE_KEY);
     return true;
@@ -103,6 +108,8 @@ export function clearGame(): boolean {
  * @returns True if a game is saved
  */
 export function hasSavedGame(): boolean {
+  if (typeof window === 'undefined') return false; // SSR guard
+  
   try {
     return localStorage.getItem(GAME_STORAGE_KEY) !== null;
   } catch {
